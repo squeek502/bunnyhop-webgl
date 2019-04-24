@@ -14,11 +14,20 @@ export default class Player {
   }
 
   update(dt, inputMap) {
+    this.playerMove(dt, inputMap);
+  }
+
+  playerMove(dt, inputMap) {
+    if (this.checkStuck()) {
+      return;
+    }
+    this.categorizePosition();
     this.addHalfGravity(dt);
 
     if(this.onGround && inputMap[" "]) {
       this.jump();
       // this is done in jump normally, extracted out to here instead
+      // from HL: "Decay it for simulation"
       this.addHalfGravity(dt);
     }
 
@@ -29,30 +38,107 @@ export default class Player {
 
     var wishDir = this.getWishDirection(inputMap);
     if (this.onGround) {
-      this.walkMove(dt, wishDir);
+      this.groundMove(dt, wishDir);
     } else {
       this.airMove(dt, wishDir);
     }
-    this.position.x += this.velocity.x * dt;
-    this.position.y += this.velocity.y * dt;
-    this.position.z += this.velocity.z * dt;
 
     this.categorizePosition();
-
     this.addHalfGravity(dt);
 
     if (this.onGround) {
       this.velocity.y = 0;
-      this.position.y = 0;
     }
   }
 
-  walkMove(dt, wishDir) {
+  checkStuck() {
+    return false;
+  }
+
+  groundMove(dt, wishDir) {
     this.accelerate(dt, wishDir, this.moveSpeed, this.scene.accel);
+    var wasOnGround = this.onGround;
+    var dest = new BABYLON.Vector3(
+      this.position.x + this.velocity.x * dt,
+      this.position.y,
+      this.position.z + this.velocity.z * dt
+    );
+    // TODO: Trace to see if it's possible to move there in one go
+    //var trace = PlayerTrace(this.position, dest);
+    //if (trace.fraction == 1) {
+    if (true) {
+      this.position = dest;
+    } else {
+      this.stairMove(dt);
+    }
+  }
+
+  stairMove(dt) {
+    var stepsize = this.scene.stepsize;
+    var originalPosition = this.position;
+    var originalVelocity = this.velocity;
+
+    var clip = this.slideMove(dt);
+
+    var downPosition = this.position;
+    var downVelocity = this.velocity;
+
+    this.position = originalPosition;
+    this.velocity = originalVelocity;
+
+    var dest = this.position;
+    dest.y += stepsize;
+
+    //var trace = PlayerTrace(this.position, dest);
+    //if (!trace.startsolid && !trace.allsolid) {
+    //  this.position = trace.endpos;
+    //}
+
+    clip = this.slideMove(dt);
+
+    dest = this.position;
+    dest.y -= stepsize;
+
+    //trace = PlayerTrace(this.position, dest);
+    //if (trace.plane.normal.y < 0.7) {
+    //  this.position = downPosition;
+    //  this.velocity = downVelocity;
+    //}
+
+    //if (!trace.startsolid && !trace.allsolid) {
+    //  this.position = trace.endpos;
+    //}
+
+    var upPosition = this.position;
+
+    var downdist = (downPosition.x-originalPosition.x)*(downPosition.x-originalPosition.x) +
+                   (downPosition.z-originalPosition.z)*(downPosition.z-originalPosition.z);
+    var updist = (upPosition.x-originalPosition.x)*(upPosition.x-originalPosition.x) +
+                 (upPosition.z-originalPosition.z)*(upPosition.z-originalPosition.z);
+
+    if (downdist > updist) {
+      this.position = downPosition;
+      this.velocity = downVelocity;
+    } else {
+      this.velocity.y = downVelocity.y;
+    }
   }
 
   airMove(dt, wishDir) {
     this.airAccelerate(dt, wishDir, this.moveSpeed, this.scene.airAccel);
+    this.slideMove(dt);
+  }
+
+  // called PM_FlyMove in HL: applies velocity while sliding along touched planes
+  slideMove(dt) {
+    this.position.x += this.velocity.x * dt;
+    this.position.z += this.velocity.z * dt;
+
+    if (this.onGround) {
+      this.position.y = 0;
+    } else {
+      this.position.y += this.velocity.y * dt;
+    }
   }
 
   applyFriction(dt, friction) {

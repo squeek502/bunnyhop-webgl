@@ -37,6 +37,7 @@ export default class Game {
     scene.airAccel = 10;
     scene.friction = 4;
     scene.stopspeed = 100;
+    scene.stepsize = 18;
 
     this.player = new Player(scene, BABYLON.Vector3.Zero());
 
