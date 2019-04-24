@@ -59,12 +59,15 @@ export default class Game {
 
     // Keyboard events
     scene.actionManager = new BABYLON.ActionManager(scene);
-    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, function (evt) {
-      this.inputMap[evt.sourceEvent.key] = true;
-    }.bind(this)));
-    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger, function (evt) {
-      this.inputMap[evt.sourceEvent.key] = false;
-    }.bind(this)));
+    var keyHandler = function (evt) {
+      var key = evt.sourceEvent.key;
+      if (key.length == 1) {
+        key = key.toLowerCase();
+      }
+      this.inputMap[key] = evt.sourceEvent.type == "keydown";
+    }.bind(this);
+    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, keyHandler));
+    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger, keyHandler));
 
     // Game/Render loop
     scene.onBeforeRenderObservable.add(()=>{
