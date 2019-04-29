@@ -52,7 +52,6 @@ export default class Player {
 
     if (this.onGround) {
       this.velocity.y = 0;
-      this.position.y = 0;
     }
   }
 
@@ -70,7 +69,6 @@ export default class Player {
     );
     // TODO: Trace to see if it's possible to move there in one go
     var trace = Collisions.PlayerTrace(this.scene.meshes, this.position, dest, this.mins, this.maxs);
-    this.scene.debugTrace = trace;
     if (trace.fraction == 1) {
       this.position = dest;
     } else {
@@ -80,41 +78,42 @@ export default class Player {
 
   stairMove(dt) {
     var stepsize = this.scene.stepsize;
-    var originalPosition = this.position;
-    var originalVelocity = this.velocity;
+    var originalPosition = this.position.clone();
+    var originalVelocity = this.velocity.clone();
 
     var clip = this.slideMove(dt);
 
-    var downPosition = this.position;
-    var downVelocity = this.velocity;
+    var downPosition = this.position.clone();
+    var downVelocity = this.velocity.clone();
 
-    this.position = originalPosition;
-    this.velocity = originalVelocity;
+    this.position = originalPosition.clone();
+    this.velocity = originalVelocity.clone();
 
-    var dest = this.position;
+    var dest = this.position.clone();
     dest.y += stepsize;
 
-    //var trace = PlayerTrace(this.position, dest);
-    //if (!trace.startsolid && !trace.allsolid) {
-    //  this.position = trace.endpos;
-    //}
+    var trace = Collisions.PlayerTrace(this.scene.meshes, this.position, dest, this.mins, this.maxs);
+    if (!trace.startsolid && !trace.allsolid) {
+      this.position = trace.endpos.clone();
+    }
 
     clip = this.slideMove(dt);
 
-    dest = this.position;
+    dest = this.position.clone();
     dest.y -= stepsize;
 
-    //trace = PlayerTrace(this.position, dest);
-    //if (trace.plane.normal.y < 0.7) {
-    //  this.position = downPosition;
-    //  this.velocity = downVelocity;
-    //}
+    trace = Collisions.PlayerTrace(this.scene.meshes, this.position, dest, this.mins, this.maxs);
+    if (!trace.plane || trace.plane.normal.y < 0.7) {
+      this.position = downPosition;
+      this.velocity = downVelocity;
+      return;
+    }
 
-    //if (!trace.startsolid && !trace.allsolid) {
-    //  this.position = trace.endpos;
-    //}
+    if (!trace.startsolid && !trace.allsolid) {
+      this.position = trace.endpos;
+    }
 
-    var upPosition = this.position;
+    var upPosition = this.position.clone();
 
     var downdist = (downPosition.x-originalPosition.x)*(downPosition.x-originalPosition.x) +
                    (downPosition.z-originalPosition.z)*(downPosition.z-originalPosition.z);
@@ -134,16 +133,157 @@ export default class Player {
     this.slideMove(dt);
   }
 
+  clipVelocity(velocity, normal, overbounce) {
+    if (!normal) { normal = BABYLON.Vector3.Zero(); }
+    const STOP_EPSILON = 0.1;
+    var angle = normal.y;
+    var blocked = 0;
+    if (angle > 0)
+      blocked |= 1;
+    if (angle === 0)
+      blocked |= 2;
+
+    var backoff = BABYLON.Vector3.Dot(velocity, normal) * overbounce;
+
+    var apply = function(compVel, compNorm) {
+      var change = compNorm*backoff;
+      var compOut = compVel - change;
+      if (compOut > -STOP_EPSILON && compOut < STOP_EPSILON)
+        compOut = 0;
+      return compOut;
+    };
+    var newVelocity = new BABYLON.Vector3(
+      apply(velocity.x, normal.x),
+      apply(velocity.y, normal.y),
+      apply(velocity.z, normal.z)
+    );
+
+    return {
+      blocked: blocked,
+      velocity: newVelocity
+    };
+  }
+
   // called PM_FlyMove in HL: applies velocity while sliding along touched planes
   slideMove(dt) {
-    this.position.x += this.velocity.x * dt;
-    this.position.z += this.velocity.z * dt;
+    const MAX_CLIP_PLANES = 5;
+    var numbumps = 4;
+    var blocked = 0;
+    var numplanes = 0;
+    var originalVelocity = this.velocity.clone();
+    var primalVelocity = this.velocity.clone();
+    var planes = [];
 
-    if (this.onGround) {
-      this.position.y = 0;
-    } else {
-      this.position.y += this.velocity.y * dt;
+    var allFraction = 0;
+    var timeLeft = dt;
+
+    for (let bumpcount=0; bumpcount<numbumps; bumpcount++) {
+      if (this.velocity.lengthSquared() === 0) {
+        break;
+      }
+
+      var end = new BABYLON.Vector3(
+        this.position.x + this.velocity.x * dt,
+        this.position.y + this.velocity.y * dt,
+        this.position.z + this.velocity.z * dt
+      );
+
+      var trace = Collisions.PlayerTrace(this.scene.meshes, this.position, end, this.mins, this.maxs);
+      this.scene.debugTrace = trace;
+      allFraction += trace.fraction;
+
+      if (trace.allsolid) {
+        this.velocity = BABYLON.Vector3.Zero();
+        return 4;
+      }
+
+      if (trace.fraction > 0) {
+        this.position = trace.endpos.clone();
+        originalVelocity = this.velocity.clone();
+        numplanes = 0;
+      }
+
+      if (trace.fraction == 1) {
+        break;
+      }
+
+      //PM_AddToTouched(trace, pmove->velocity);
+
+      if (trace.plane && trace.plane.normal.y > 0.7) {
+        blocked |= 1;
+      }
+
+      if (!trace.plane || trace.plane.normal.y === 0) {
+        blocked |= 2;
+      }
+
+      timeLeft -= timeLeft * trace.fraction;
+
+      if (numplanes >= MAX_CLIP_PLANES) {
+        // this shouldn't happen
+        this.velocity = BABYLON.Vector3.Zero();
+        break;
+      }
+
+      planes[numplanes] = trace.plane ? trace.plane.normal : BABYLON.Vector3.Zero();
+      numplanes++;
+
+      if (!this.onGround) {
+        var newVelocity;
+        for (let i=0; i<numplanes; i++) {
+          if (planes[i] && planes[i].y > 0.7) {
+            let clipped = this.clipVelocity(originalVelocity, planes[i], 1);
+            newVelocity = clipped.velocity;
+            originalVelocity = newVelocity.clone();
+          }
+          else {
+            let clipped = this.clipVelocity(originalVelocity, planes[i], 1.0 /*+ pmove->movevars->bounce * (1-pmove->friction)*/);
+            newVelocity = clipped.velocity;
+          }
+        }
+        this.velocity = newVelocity.clone();
+        originalVelocity = newVelocity.clone();
+      }
+      else {
+        var i;
+        for (i=0; i<numplanes; i++) {
+          let clipped = this.clipVelocity(originalVelocity, planes[i], 1);
+          this.velocity = clipped.velocity;
+          var j;
+          for (j=0; j<numplanes; j++) {
+            if (j != i) {
+              if (BABYLON.Vector3.Dot(this.velocity, planes[j]) < 0)
+                break;
+            }
+          }
+          if (j == numplanes)
+            break;
+        }
+        if (i != numplanes) {
+          // empty
+        }
+        else {
+          if (numplanes != 2) {
+            this.velocity = BABYLON.Vector3.Zero();
+            break;
+          }
+          var dir = BABYLON.Vector3.Cross(planes[0], planes[1]);
+          var d = BABYLON.Vector3.Dot(dir, this.velocity);
+          this.velocity = dir.scale(d);
+        }
+
+        if (BABYLON.Vector3.Dot(this.velocity, primalVelocity) <= 0) {
+          this.velocity = BABYLON.Vector3.Zero();
+          break;
+        }
+      }
     }
+
+    if (allFraction === 0) {
+      this.velocity = BABYLON.Vector3.Zero();
+    }
+
+    return blocked;
   }
 
   applyFriction(dt, friction) {
@@ -200,7 +340,24 @@ export default class Player {
   }
 
   categorizePosition() {
-    this.onGround = this.position.y <= 0;
+    var point = new BABYLON.Vector3(
+      this.position.x,
+      this.position.y - 2,
+      this.position.z
+    );
+
+    if (this.velocity.y > 180) {
+      this.onGround = false;
+    }
+    else {
+      var tr = Collisions.PlayerTrace(this.scene.meshes, this.position, point, this.mins, this.maxs);
+      if (!tr.plane || tr.plane.normal.y < 0.7) {
+        this.onGround = false;
+      }
+      else {
+        this.onGround = true;
+      }
+    }
   }
 
   jump() {

@@ -7,7 +7,7 @@ var DIST_EPSILON = 0.03125;
 export function ClipBoxToPlanes(mins, maxs, start, end, planes, lastFraction) {
   if (lastFraction === undefined) { lastFraction = 1; }
   var trace = {
-    fraction: 1,
+    fraction: lastFraction,
     allsolid: false,
     startsolid: false,
     plane: undefined,

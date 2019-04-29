@@ -41,7 +41,7 @@ export default class Game {
     scene.stopspeed = 100;
     scene.stepsize = 18;
 
-    this.player = new Player(scene, BABYLON.Vector3.Zero());
+    this.player = new Player(scene, new BABYLON.Vector3(0,128,0));
 
     var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(0, this.player.eyeHeight, 0), scene);
     camera.inertia = 0;
@@ -49,6 +49,22 @@ export default class Game {
     camera.setTarget(camera.position.add(new BABYLON.Vector3(1, 0, 0)));
 
     var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+
+    var box = BABYLON.Mesh.CreateBox("box1", 64, scene);
+    box.position.y = 32;
+
+    var box2 = BABYLON.Mesh.CreateBox("box2", 24, scene);
+    box2.position.y = 12;
+    box2.position.x = 44;
+
+    var box3 = BABYLON.Mesh.CreateBox("box2", 12, scene);
+    box3.position.y = 6;
+    box3.position.x = 62;
+
+    var plane1 = BABYLON.Mesh.CreatePlane("plane1", 1024, scene);
+    plane1.rotation = new BABYLON.Vector3(Math.PI/3, 0, 0);
+    plane1.position.z = 512;
+    plane1.bakeCurrentTransformIntoVertices();
 
     var groundSize = 1024;
 

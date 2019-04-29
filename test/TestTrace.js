@@ -1,20 +1,5 @@
 import * as Collisions from '../src/Collisions.js';
-
-var assert = {
-  equal: function(firstValue, secondValue) {
-    if (firstValue != secondValue)
-      throw new Error('Assert failed, ' + firstValue + ' is not equal to ' + secondValue + '.');
-  },
-  closeTo: function(firstValue, secondValue) {
-    let delta = Math.abs(firstValue - secondValue);
-    if (delta > 0.01)
-      throw new Error('Assert failed, ' + firstValue + ' is not close to ' + secondValue + '.');
-  },
-  vecsEqual: function(firstValue, secondValue) {
-    if (!firstValue.equalsWithEpsilon(secondValue, 0.01))
-      throw new Error('Assert failed, ' + firstValue + ' is not equal to ' + secondValue + '.');
-  }
-};
+import * as assert from './assert.js';
 
 var runTest = function(input, expected) {
   var trace = Collisions.ClipBoxToPlanes(input.mins, input.maxs, input.start, input.end, [input.plane]);
