@@ -9,6 +9,8 @@ export default class Game {
     this.inputMap = {};
     this.player = undefined;
     this.nextHUDUpdate = 0;
+    this.speedometerElement = document.getElementById("speedometer");
+    this.debugElement = document.getElementById("debug");
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {
@@ -89,9 +91,18 @@ export default class Game {
     this.scene.camera.position = new BABYLON.Vector3(this.player.position.x, this.player.position.y + this.player.eyeHeight, this.player.position.z);
 
     if (performance.now() >= this.nextHUDUpdate) {
-      var speedometer = document.getElementById('speedometer');
-      speedometer.innerHTML = Math.round(this.player.getHorizSpeed());
+      this.updateHUD(dt);
       this.nextHUDUpdate = performance.now() + 100;
+    }
+  }
+
+  updateHUD(dt) {
+    this.speedometerElement.innerHTML = Math.round(this.player.getHorizSpeed());
+    this.debugElement.innerHTML = `<div>pos: ${this.player.position.x},${this.player.position.y},${this.player.position.z}</div>`;
+    this.debugElement.innerHTML += `<div>vel: ${this.player.velocity.x},${this.player.velocity.y},${this.player.velocity.z}</div>`;
+    this.debugElement.innerHTML += `<div>onGround: ${this.player.onGround}</div>`;
+    if (this.scene.debugTrace) {
+      this.debugElement.innerHTML += `<div>trace: fraction: ${this.scene.debugTrace.fraction} startsolid: ${this.scene.debugTrace.startsolid} allsolid: ${this.scene.debugTrace.allsolid} plane: ${this.scene.debugTrace.plane}</div>`;
     }
   }
 

@@ -1,0 +1,24 @@
+<!--
+The most janky test runner possible?
+Just load this html file in a browser
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Bunnyhop Test Runner</title>
+
+    <script src="src/vendor/babylon-3.3.min.js"></script>
+  </head>
+
+  <body>
+    <div id="result">tests running or failed, see console</div>
+
+    <script type="module">
+      import "./test/TestTrace.js";
+      document.getElementById("result").innerHTML = "all tests passed";
+    </script>
+  </body>
+
+</html>

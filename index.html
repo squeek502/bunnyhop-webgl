@@ -20,7 +20,7 @@
         touch-action: none;
       }
 
-      #speedometer {
+      #speedometer, #debug {
         position: absolute;
         right: 10px;
         bottom: 10px;
@@ -31,6 +31,12 @@
         padding: 5px 15px;
         z-index: 2;
       }
+
+      #debug {
+        font-size: 16px !important;
+        left: 10px !important;
+        right: auto !important;
+      }
     </style>
 
     <script src="src/vendor/babylon-3.3.min.js"></script>
@@ -40,6 +46,7 @@
   <body>
 
     <div id="speedometer">0</div>
+    <div id="debug"></div>
     <canvas id="renderCanvas" touch-action="none"></canvas>
 
     <script type="module">

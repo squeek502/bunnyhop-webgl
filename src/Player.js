@@ -1,3 +1,5 @@
+import * as Collisions from './Collisions.js';
+
 export default class Player {
 
   constructor(scene, position) {
@@ -11,6 +13,8 @@ export default class Player {
     this.duckHeight = 36;
     this.duckEyeHeight = this.duckHeight - 6;
     this.jumpVelocity = 295;
+    this.mins = new BABYLON.Vector3(-16, 0, -16);
+    this.maxs = new BABYLON.Vector3(16, this.height, 16);
   }
 
   update(dt, inputMap) {
@@ -48,6 +52,7 @@ export default class Player {
 
     if (this.onGround) {
       this.velocity.y = 0;
+      this.position.y = 0;
     }
   }
 
@@ -64,9 +69,9 @@ export default class Player {
       this.position.z + this.velocity.z * dt
     );
     // TODO: Trace to see if it's possible to move there in one go
-    //var trace = PlayerTrace(this.position, dest);
-    //if (trace.fraction == 1) {
-    if (true) {
+    var trace = Collisions.PlayerTrace(this.scene.meshes, this.position, dest, this.mins, this.maxs);
+    this.scene.debugTrace = trace;
+    if (trace.fraction == 1) {
       this.position = dest;
     } else {
       this.stairMove(dt);
