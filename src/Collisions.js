@@ -1,17 +1,31 @@
 export function PlayerTrace(meshes, start, end, mins, maxs, predicate) {
-  return BoxTrace(meshes, start, end, mins, maxs, predicate);
+  var trace = BoxTrace(meshes, start, end, mins, maxs, predicate);
+  if (trace.allsolid) {
+    trace.startsolid = true;
+  }
+  if (trace.startsolid) {
+    trace.fraction = 0;
+  }
+  return trace;
 }
 
 var DIST_EPSILON = 0.03125;
+// COLLIDE_EPSILON is necessary to avoid instances where ClipBoxToPlanes
+// thinks a collision happened but its so close to not colliding that future
+// movement will fail (i.e. clipVelocity will not alter velocity since
+// Dot(velocity, normal) will return exactly 0)
+var COLLIDE_EPSILON = DIST_EPSILON/1024;
 
-export function ClipBoxToPlanes(mins, maxs, start, end, planes, lastFraction) {
-  if (lastFraction === undefined) { lastFraction = 1; }
-  var trace = {
-    fraction: lastFraction,
-    allsolid: false,
-    startsolid: false,
-    plane: undefined,
-  };
+export function ClipBoxToPlanes(mins, maxs, start, end, planes, lastTrace) {
+  if (lastTrace === undefined) {
+    lastTrace = {
+      fraction: 1,
+      allsolid: false,
+      startsolid: false,
+      plane: undefined,
+    };
+  }
+  var trace = lastTrace;
 
   var enterfrac = -1;
   var leavefrac = 1;
@@ -37,7 +51,7 @@ export function ClipBoxToPlanes(mins, maxs, start, end, planes, lastFraction) {
     if (d1 > 0)
       startout = true;
 
-    if (d1 > 0 && d2 >= d1)
+    if (d1 > 0 && d2 >= (d1-COLLIDE_EPSILON))
       return trace;
 
     if (d1 <= 0 && d2 <= 0)
@@ -69,7 +83,7 @@ export function ClipBoxToPlanes(mins, maxs, start, end, planes, lastFraction) {
     return trace;
   }
   if (enterfrac < leavefrac) {
-    if (enterfrac > -1 && enterfrac < lastFraction) {
+    if (enterfrac > -1 && enterfrac < trace.fraction) {
       if (enterfrac < 0) {
         enterfrac = 0;
       }
@@ -82,6 +96,10 @@ export function ClipBoxToPlanes(mins, maxs, start, end, planes, lastFraction) {
 }
 
 export function MeshToPlanes(object) {
+  // if object is already an array of planes, then return it
+  if (Array.isArray(object)) {
+    return object;
+  }
   var rawVerts = object.getVerticesData ? object.getVerticesData(BABYLON.VertexBuffer.PositionKind) : [];
   //var rawFaces = object.getIndices ? object.getIndices() : [];
   var rawNormals = object.getVerticesData ? object.getVerticesData(BABYLON.VertexBuffer.NormalKind) : [];
@@ -111,11 +129,16 @@ export function MeshToPlanes(object) {
 
 // TODO: actually use predicate
 export function BoxTrace(meshes, start, end, mins, maxs, predicate) {
-  var trace;
+  var trace = {
+    fraction: 1,
+    allsolid: false,
+    startsolid: false,
+    plane: undefined,
+  };
   for (var i=0; i < meshes.length; i++) {
     var mesh = meshes[i];
     var planes = MeshToPlanes(mesh);
-    trace = ClipBoxToPlanes(mins, maxs, start, end, planes, trace ? trace.fraction : 1);
+    trace = ClipBoxToPlanes(mins, maxs, start, end, planes, trace);
     if (trace.fraction === 0) {
       break;
     }

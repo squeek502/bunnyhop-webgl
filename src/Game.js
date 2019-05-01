@@ -61,15 +61,16 @@ export default class Game {
     box3.position.y = 6;
     box3.position.x = 62;
 
-    var plane1 = BABYLON.Mesh.CreatePlane("plane1", 1024, scene);
-    plane1.rotation = new BABYLON.Vector3(Math.PI/3, 0, 0);
-    plane1.position.z = 512;
+    var plane1 = BABYLON.Mesh.CreateBox("plane1", 1024, scene);
+    plane1.rotation = new BABYLON.Vector3(Math.PI/2.5, 0, 0);
+    plane1.position.z = 1024;
+    plane1.position.y = -330;
     plane1.bakeCurrentTransformIntoVertices();
 
-    var groundSize = 1024;
+    var groundSize = 10000;
 
     // The ground
-    var ground = BABYLON.Mesh.CreateGround("ground", groundSize, groundSize, 2, scene);
+    var ground = BABYLON.Mesh.CreateGround("ground", groundSize, groundSize, 1, scene);
     if (!ground.material) {
       ground.material = new BABYLON.StandardMaterial(ground.name+"mat", scene);
     }
@@ -84,6 +85,9 @@ export default class Game {
         key = key.toLowerCase();
       }
       this.inputMap[key] = evt.sourceEvent.type == "keydown";
+      if (key == "q" && evt.sourceEvent.type == "keydown") {
+        this.player.conc();
+      }
     }.bind(this);
     scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, keyHandler));
     scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger, keyHandler));

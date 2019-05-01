@@ -20,7 +20,7 @@
         touch-action: none;
       }
 
-      #speedometer, #debug {
+      #speedometer-container, #debug, #controls {
         position: absolute;
         right: 10px;
         bottom: 10px;
@@ -31,12 +31,18 @@
         padding: 5px 15px;
         z-index: 2;
       }
-
+      #speedometer-container h2 { font-size: 24px; }
       #debug {
         font-size: 16px !important;
         left: 10px !important;
         right: auto !important;
       }
+      #controls {
+        font-size: 16px !important;
+        top: 10px !important;
+        bottom: auto !important;
+      }
+      h2 { margin: 0; margin-bottom: .25rem; }
     </style>
 
     <script src="src/vendor/babylon-3.3.min.js"></script>
@@ -45,8 +51,14 @@
 
   <body>
 
-    <div id="speedometer">0</div>
+    <div id="speedometer-container"><h2>Speed</h2><div id="speedometer">0</div></div>
     <div id="debug"></div>
+    <div id="controls">
+      <h2>Controls</h2>
+      <div>Move: WASD</div>
+      <div>Jump: Space</div>
+      <div>Conc: Q</div>
+    </div>
     <canvas id="renderCanvas" touch-action="none"></canvas>
 
     <script type="module">

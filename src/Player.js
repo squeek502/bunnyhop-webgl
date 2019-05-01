@@ -56,6 +56,9 @@ export default class Player {
   }
 
   checkStuck() {
+    // TODO: implement this, or handle stuckness in some way
+    // if a player does happen to get stuck in a plane, slideMove will
+    // fail because it can't handle traces that start in a solid
     return false;
   }
 
@@ -144,6 +147,10 @@ export default class Player {
       blocked |= 2;
 
     var backoff = BABYLON.Vector3.Dot(velocity, normal) * overbounce;
+    if (backoff === 0.0) {
+      // this should never happen, see COLLIDE_EPSILON in Collisions.js
+      throw new Error("clipVelocity with 0 backoff");
+    }
 
     var apply = function(compVel, compNorm) {
       var change = compNorm*backoff;
@@ -157,6 +164,14 @@ export default class Player {
       apply(velocity.y, normal.y),
       apply(velocity.z, normal.z)
     );
+
+    // this was a new addition in the source engine
+    var adjust = BABYLON.Vector3.Dot(newVelocity, normal);
+    if( adjust < 0.0 ) {
+      newVelocity.x -= normal.x * adjust;
+      newVelocity.y -= normal.y * adjust;
+      newVelocity.z -= normal.z * adjust;
+    }
 
     return {
       blocked: blocked,
@@ -177,7 +192,7 @@ export default class Player {
     var allFraction = 0;
     var timeLeft = dt;
 
-    for (let bumpcount=0; bumpcount<numbumps; bumpcount++) {
+    for (var bumpcount=0; bumpcount<numbumps; bumpcount++) {
       if (this.velocity.lengthSquared() === 0) {
         break;
       }
@@ -189,7 +204,6 @@ export default class Player {
       );
 
       var trace = Collisions.PlayerTrace(this.scene.meshes, this.position, end, this.mins, this.maxs);
-      this.scene.debugTrace = trace;
       allFraction += trace.fraction;
 
       if (trace.allsolid) {
@@ -209,11 +223,11 @@ export default class Player {
 
       //PM_AddToTouched(trace, pmove->velocity);
 
-      if (trace.plane && trace.plane.normal.y > 0.7) {
+      if (trace.plane.normal.y > 0.7) {
         blocked |= 1;
       }
 
-      if (!trace.plane || trace.plane.normal.y === 0) {
+      if (trace.plane.normal.y === 0) {
         blocked |= 2;
       }
 
@@ -225,16 +239,15 @@ export default class Player {
         break;
       }
 
-      planes[numplanes] = trace.plane ? trace.plane.normal : BABYLON.Vector3.Zero();
+      planes[numplanes] = trace.plane.normal;
       numplanes++;
 
       if (!this.onGround) {
         var newVelocity;
         for (let i=0; i<numplanes; i++) {
-          if (planes[i] && planes[i].y > 0.7) {
+          if (planes[i].y > 0.7) {
             let clipped = this.clipVelocity(originalVelocity, planes[i], 1);
             newVelocity = clipped.velocity;
-            originalVelocity = newVelocity.clone();
           }
           else {
             let clipped = this.clipVelocity(originalVelocity, planes[i], 1.0 /*+ pmove->movevars->bounce * (1-pmove->friction)*/);
@@ -259,10 +272,7 @@ export default class Player {
           if (j == numplanes)
             break;
         }
-        if (i != numplanes) {
-          // empty
-        }
-        else {
+        if (i == numplanes) {
           if (numplanes != 2) {
             this.velocity = BABYLON.Vector3.Zero();
             break;
@@ -409,5 +419,22 @@ export default class Player {
 
   getHorizSpeed() {
     return Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.z * this.velocity.z);
+  }
+
+  conc() {
+    const LATERAL_POWER = 2.74;
+    const VERTICAL_POWER = 4.10;
+    const GROUND_UP_PUSH = 90;
+
+    if (this.onGround) {
+      this.velocity = new BABYLON.Vector3(
+        this.velocity.x * LATERAL_POWER * 0.95,
+        (this.velocity.y + GROUND_UP_PUSH) * VERTICAL_POWER,
+        this.velocity.z * LATERAL_POWER * 0.95
+      );
+    }
+    else {
+      this.velocity.multiplyInPlace(new BABYLON.Vector3(LATERAL_POWER, VERTICAL_POWER, LATERAL_POWER));
+    }
   }
 }
