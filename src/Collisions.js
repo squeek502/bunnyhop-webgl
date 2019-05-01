@@ -98,13 +98,18 @@ export function ClipBoxToPlanes(mins, maxs, start, end, planes, lastTrace) {
 // sometimes verts/normals of meshes will have very slightly different values
 // even though they are acfually on the same plane
 const PLANE_EPSILON = Math.pow(10, -8);
+const PLANE_CACHE = {};
 
-// TODO: cache the plane representations
 export function MeshToPlanes(object) {
   // if object is already an array of planes, then return it
   if (Array.isArray(object)) {
     return object;
   }
+  var cached = PLANE_CACHE[object.uniqueId];
+  if (cached) {
+    return cached;
+  }
+
   var rawVerts = object.getVerticesData ? object.getVerticesData(BABYLON.VertexBuffer.PositionKind) : [];
   //var rawFaces = object.getIndices ? object.getIndices() : [];
   var rawNormals = object.getVerticesData ? object.getVerticesData(BABYLON.VertexBuffer.NormalKind) : [];
@@ -145,6 +150,7 @@ export function MeshToPlanes(object) {
       });
     }
   }
+  PLANE_CACHE[object.uniqueId] = planes;
   return planes;
 }
 
