@@ -53,13 +53,20 @@ export default class Game {
     var box = BABYLON.Mesh.CreateBox("box1", 64, scene);
     box.position.y = 32;
 
-    var box2 = BABYLON.Mesh.CreateBox("box2", 24, scene);
-    box2.position.y = 12;
-    box2.position.x = 44;
+    var box2 = BABYLON.Mesh.CreateBox("box2", 64, scene);
+    box2.position.y = 24;
+    box2.position.x = 48;
+    box2.scaling = new BABYLON.Vector3(0.5, 0.75, 1);
 
-    var box3 = BABYLON.Mesh.CreateBox("box2", 12, scene);
-    box3.position.y = 6;
-    box3.position.x = 62;
+    var box3 = BABYLON.Mesh.CreateBox("box3", 64, scene);
+    box3.position.y = 16;
+    box3.position.x = 80;
+    box3.scaling = new BABYLON.Vector3(0.5, 0.5, 1);
+
+    var box4 = BABYLON.Mesh.CreateBox("box4", 64, scene);
+    box4.position.y = 8;
+    box4.position.x = 112;
+    box4.scaling = new BABYLON.Vector3(0.5, 0.25, 1);
 
     var plane1 = BABYLON.Mesh.CreateBox("plane1", 1024, scene);
     plane1.rotation = new BABYLON.Vector3(Math.PI/2.5, 0, 0);
