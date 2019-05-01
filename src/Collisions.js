@@ -95,6 +95,11 @@ export function ClipBoxToPlanes(mins, maxs, start, end, planes, lastTrace) {
   return trace;
 }
 
+// sometimes verts/normals of meshes will have very slightly different values
+// even though they are acfually on the same plane
+const PLANE_EPSILON = Math.pow(10, -8);
+
+// TODO: cache the plane representations
 export function MeshToPlanes(object) {
   // if object is already an array of planes, then return it
   if (Array.isArray(object)) {
@@ -105,6 +110,21 @@ export function MeshToPlanes(object) {
   var rawNormals = object.getVerticesData ? object.getVerticesData(BABYLON.VertexBuffer.NormalKind) : [];
 
   var planes = [];
+  var seenPlane = function(dist, normal) {
+    for (let i=0; i<planes.length; i++) {
+      let plane = planes[i];
+      // not aware of a way to do this check more efficiently, because
+      // we can't assume equality, so we need to do O(n) iteration while
+      // testing for equality with an epsilon
+      if (
+        Math.abs(plane.dist - dist) < PLANE_EPSILON &&
+        plane.normal.equalsWithEpsilon(normal, PLANE_EPSILON)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
   var normals = [];
   for (let index = 0; index < rawNormals.length; index += 3) {
     var vec = BABYLON.Vector3.FromArray(rawNormals, index);
@@ -118,12 +138,13 @@ export function MeshToPlanes(object) {
     );
     var normal = normals[index/3];
     var dist = BABYLON.Vector3.Dot(worldVec, normal);
-    planes.push({
-      dist: dist,
-      normal: normal
-    });
+    if (!seenPlane(dist, normal)) {
+      planes.push({
+        dist: dist,
+        normal: normal
+      });
+    }
   }
-  // TODO: remove redundant planes
   return planes;
 }
 
