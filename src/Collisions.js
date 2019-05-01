@@ -1,3 +1,12 @@
+export class Trace {
+  constructor() {
+    this.fraction = 1;
+    this.allsolid = false;
+    this.startsolid = false;
+    this.plane = undefined;
+  }
+}
+
 export function PlayerTrace(meshes, start, end, mins, maxs, predicate) {
   var trace = BoxTrace(meshes, start, end, mins, maxs, predicate);
   if (trace.allsolid) {
@@ -17,16 +26,7 @@ var DIST_EPSILON = 0.03125;
 var COLLIDE_EPSILON = DIST_EPSILON/1024;
 
 export function ClipBoxToPlanes(mins, maxs, start, end, planes, lastTrace) {
-  if (lastTrace === undefined) {
-    lastTrace = {
-      fraction: 1,
-      allsolid: false,
-      startsolid: false,
-      plane: undefined,
-    };
-  }
-  var trace = lastTrace;
-
+  var trace = lastTrace ? lastTrace : new Trace();
   var enterfrac = -1;
   var leavefrac = 1;
   var clipplane;
@@ -129,12 +129,7 @@ export function MeshToPlanes(object) {
 
 // TODO: actually use predicate
 export function BoxTrace(meshes, start, end, mins, maxs, predicate) {
-  var trace = {
-    fraction: 1,
-    allsolid: false,
-    startsolid: false,
-    plane: undefined,
-  };
+  var trace = new Trace();
   for (var i=0; i < meshes.length; i++) {
     var mesh = meshes[i];
     var planes = MeshToPlanes(mesh);

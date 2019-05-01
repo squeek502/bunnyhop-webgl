@@ -67,7 +67,7 @@ export default class Game {
     plane1.position.y = -330;
     plane1.bakeCurrentTransformIntoVertices();
 
-    var groundSize = 10000;
+    var groundSize = 8192;
 
     // The ground
     var ground = BABYLON.Mesh.CreateGround("ground", groundSize, groundSize, 1, scene);
