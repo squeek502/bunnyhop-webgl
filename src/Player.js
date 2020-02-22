@@ -147,10 +147,6 @@ export default class Player {
       blocked |= 2;
 
     var backoff = BABYLON.Vector3.Dot(velocity, normal) * overbounce;
-    if (backoff === 0.0) {
-      // this should never happen, see COLLIDE_EPSILON in Collisions.js
-      throw new Error("clipVelocity with 0 backoff");
-    }
 
     var apply = function(compVel, compNorm) {
       var change = compNorm*backoff;
