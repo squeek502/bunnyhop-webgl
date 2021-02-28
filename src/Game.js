@@ -46,6 +46,7 @@ export default class Game {
     var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(0, this.player.eyeHeight, 0), scene);
     camera.inertia = 0;
     camera.angularSensibility = 1000;
+    camera.fov = 1.0;
     camera.setTarget(camera.position.add(new BABYLON.Vector3(1, 0, 0)));
 
     var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
