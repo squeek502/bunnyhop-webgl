@@ -18,6 +18,14 @@ export function PlayerTrace(meshes, start, end, mins, maxs, predicate) {
   return trace;
 }
 
+// Returns false if the given player position is not valid (in solid)
+export function PlayerTestPosition(meshes, pos, mins, maxs, predicate) {
+  // TODO: make this more effecient, the full trace code doesn't need to be run here
+  var trace = PlayerTrace(meshes, pos, pos, mins, maxs, predicate);
+  return !trace.startsolid && !trace.allsolid;
+}
+
+// TODO: Should this be related to Number.EPSILON in any way?
 var DIST_EPSILON = 0.03125;
 // COLLIDE_EPSILON is necessary to avoid instances where ClipBoxToPlanes
 // thinks a collision happened but its so close to not colliding that future

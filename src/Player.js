@@ -23,7 +23,8 @@ export default class Player {
 
   playerMove(dt, inputMap) {
     if (this.checkStuck()) {
-      return;
+      // this is kind of an unrecoverable state as of now, so just throw
+      throw new Error("stuck and unable to get unstuck");
     }
     this.categorizePosition();
     this.addHalfGravity(dt);
@@ -55,11 +56,40 @@ export default class Player {
     }
   }
 
-  checkStuck() {
-    // TODO: implement this, or handle stuckness in some way
-    // if a player does happen to get stuck in a plane, slideMove will
-    // fail because it can't handle traces that start in a solid
+  // this is Quake 1's version of handling stuckness; it's very simple compared to HL1's
+  // This function assumes that we are currently stuck,
+  // Returns true if able to get unstuck, false otherwise.
+  nudgePosition() {
+    var testPosition = new BABYLON.Vector3();
+    var nudge = [0, -1/8, 1/8];
+    var x, y, z;
+    // try nudging in every possible combination of directions
+    for (z=0; z<3; z++) {
+      for (x=0; x<3; x++) {
+        for (y=0; y<3; y++) {
+          testPosition.x = this.position.x + nudge[x];
+          testPosition.y = this.position.y + nudge[y];
+          testPosition.z = this.position.z + nudge[z];
+          // if we are not stuck anymore, we're done
+          if (Collisions.PlayerTestPosition(this.scene.meshes, testPosition, this.mins, this.maxs)) {
+            this.position = testPosition;
+            return true;
+          }
+        }
+      }
+    }
     return false;
+  }
+
+  // Returns true if we are stuck and we weren't able to get unstuck
+  checkStuck() {
+    var wasStuck = !Collisions.PlayerTestPosition(this.scene.meshes, this.position, this.mins, this.maxs);
+    var didUnstuck = false;
+    if (wasStuck) {
+      // TODO: more robust stuckness handling if nudgePosition on its own isn't adequate
+      didUnstuck = this.nudgePosition();
+    }
+    return wasStuck && !didUnstuck;
   }
 
   groundMove(dt, wishDir) {
