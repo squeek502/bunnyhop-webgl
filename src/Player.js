@@ -16,7 +16,7 @@ export default class Player {
     this.mins = new BABYLON.Vector3(-16, 0, -16);
     this.maxs = new BABYLON.Vector3(16, this.height, 16);
     // TODO this seems like the wrong place for this
-    this.useStayOnGround = false;
+    this.useStayOnGround = true;
   }
 
   update(dt, inputMap) {
@@ -105,11 +105,11 @@ export default class Player {
     var trace = Collisions.PlayerTrace(this.scene.meshes, this.position, dest, this.mins, this.maxs);
     if (trace.fraction == 1) {
       this.position = dest;
-      if (this.useStayOnGround) {
-        this.stayOnGround();
-      }
     } else {
       this.stairMove(dt);
+    }
+    if (this.useStayOnGround) {
+      this.stayOnGround();
     }
   }
 
