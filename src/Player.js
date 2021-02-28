@@ -100,12 +100,44 @@ export default class Player {
       this.position.y,
       this.position.z + this.velocity.z * dt
     );
-    // TODO: Trace to see if it's possible to move there in one go
     var trace = Collisions.PlayerTrace(this.scene.meshes, this.position, dest, this.mins, this.maxs);
     if (trace.fraction == 1) {
       this.position = dest;
+      // TODO: This could be made optional to swap between TFC-like and FF-like slope movement
+      // Note: If this function is not called, then we should nudge the player down in categorizePosition
+      // so that players can't slightly float above the ground they are on.
+      this.stayOnGround();
     } else {
       this.stairMove(dt);
+    }
+  }
+
+  // This is a Source-engine-specific function that allows players to
+  // walk down slopes and stairs without leaving the ground.
+  stayOnGround(dt) {
+    var start = new BABYLON.Vector3(
+      this.position.x,
+      this.position.y + 2,
+      this.position.z
+    );
+    var end = new BABYLON.Vector3(
+      this.position.x,
+      this.position.y - this.scene.stepsize,
+      this.position.z
+    );
+
+    // See how far up we can go without getting stuck
+    var trace = Collisions.PlayerTrace(this.scene.meshes, this.position, start, this.mins, this.maxs);
+    start = trace.endpos;
+
+    // Now trace down from a known safe position
+    trace = Collisions.PlayerTrace(this.scene.meshes, start, end, this.mins, this.maxs);
+    if (trace.fraction > 0 &&      // must go somewhere
+      trace.fraction < 1 &&        // must hit something
+      !trace.startsolid &&         // can't be embedded in a solid
+      trace.plane.normal.y >= 0.7) // can't hit a too-steep slope
+    {
+      this.position = trace.endpos;
     }
   }
 
