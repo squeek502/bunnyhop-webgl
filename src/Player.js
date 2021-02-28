@@ -15,6 +15,8 @@ export default class Player {
     this.jumpVelocity = 295;
     this.mins = new BABYLON.Vector3(-16, 0, -16);
     this.maxs = new BABYLON.Vector3(16, this.height, 16);
+    // TODO this seems like the wrong place for this
+    this.useStayOnGround = false;
   }
 
   update(dt, inputMap) {
@@ -103,10 +105,9 @@ export default class Player {
     var trace = Collisions.PlayerTrace(this.scene.meshes, this.position, dest, this.mins, this.maxs);
     if (trace.fraction == 1) {
       this.position = dest;
-      // TODO: This could be made optional to swap between TFC-like and FF-like slope movement
-      // Note: If this function is not called, then we should nudge the player down in categorizePosition
-      // so that players can't slightly float above the ground they are on.
-      this.stayOnGround();
+      if (this.useStayOnGround) {
+        this.stayOnGround();
+      }
     } else {
       this.stairMove(dt);
     }
@@ -114,7 +115,7 @@ export default class Player {
 
   // This is a Source-engine-specific function that allows players to
   // walk down slopes and stairs without leaving the ground.
-  stayOnGround(dt) {
+  stayOnGround() {
     var start = new BABYLON.Vector3(
       this.position.x,
       this.position.y + 2,
@@ -424,6 +425,10 @@ export default class Player {
       }
       else {
         this.onGround = true;
+        // move the player based on the trace so they don't float slightly above the ground
+        if (!this.useStayOnGround && !tr.startsolid && !tr.allsolid) {
+          this.position = tr.endpos;
+        }
       }
     }
   }
