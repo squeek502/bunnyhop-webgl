@@ -58,6 +58,7 @@
       <div>Move: WASD</div>
       <div>Jump: Space</div>
       <div>Conc: Q</div>
+      <a id="pause-button" href="#">Pause/Unpause</a>
     </div>
     <canvas id="renderCanvas" touch-action="none"></canvas>
 
@@ -68,7 +69,21 @@
         var canvas = document.getElementById("renderCanvas");
         var engine = new BABYLON.Engine(canvas, true);
         var game = new Game(canvas, engine, fpsmeter);
-        game.setScene(game.createScene());
+        var scene = game.createScene();
+        game.setScene(scene);
+
+        var paused = false;
+        var oldRenderLoop = null;
+        document.getElementById("pause-button").addEventListener("mouseup", function(e) {
+          if (paused) {
+            engine.runRenderLoop(oldRenderLoop);
+          } else {
+            oldRenderLoop = engine._activeRenderLoops[0];
+            engine.stopRenderLoop();
+          }
+          paused = !paused;
+          e.preventDefault();
+        })
       });
     </script>
 
