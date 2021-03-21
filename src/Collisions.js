@@ -113,6 +113,9 @@ export function MeshToPlanes(object) {
   if (Array.isArray(object)) {
     return object;
   }
+  if (object.bspPlanes) {
+    return object.bspPlanes;
+  }
   var cached = PLANE_CACHE[object.uniqueId];
   if (cached) {
     return cached;
@@ -168,9 +171,11 @@ export function BoxTrace(meshes, start, end, mins, maxs, predicate) {
   for (var i=0; i < meshes.length; i++) {
     var mesh = meshes[i];
     var planes = MeshToPlanes(mesh);
-    trace = ClipBoxToPlanes(mins, maxs, start, end, planes, trace);
-    if (trace.fraction === 0) {
-      break;
+    if (planes.length > 0) {
+      trace = ClipBoxToPlanes(mins, maxs, start, end, planes, trace);
+      if (trace.fraction === 0) {
+        break;
+      }
     }
   }
 
