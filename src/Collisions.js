@@ -191,3 +191,10 @@ export function BoxTrace(meshes, start, end, mins, maxs, predicate) {
   }
   return trace;
 }
+
+export function AABBsIntersect(aMins, aMaxs, bMins, bMaxs) {
+  return (aMins.x <= bMaxs.x && aMaxs.x >= bMins.x) &&
+         (aMins.y <= bMaxs.y && aMaxs.y >= bMins.y) &&
+         (aMins.z <= bMaxs.z && aMaxs.z >= bMins.z);
+}
+
