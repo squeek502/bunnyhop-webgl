@@ -1,4 +1,5 @@
 import Player from './Player.js';
+import * as Collisions from './Collisions.js';
 
 export default class Game {
 
@@ -40,6 +41,9 @@ export default class Game {
     scene.friction = 4;
     scene.stopspeed = 100;
     scene.stepsize = 18;
+    scene.triggers = [];
+    scene.triggersBeingTouched = new Set();
+    scene.triggerCallbacks = new Map();
 
     this.player = new Player(scene, new BABYLON.Vector3(0,128,0));
 
@@ -121,6 +125,23 @@ export default class Game {
     if (dt == 0) return;
 
     this.player.update(dt, this.inputMap);
+
+    let player_mins = this.player.position.add(this.player.mins);
+    let player_maxs = this.player.position.add(this.player.maxs);
+    this.scene.triggers.forEach((trigger) => {
+      let trigger_mins = trigger.getBoundingInfo().boundingBox.minimumWorld;
+      let trigger_maxs = trigger.getBoundingInfo().boundingBox.maximumWorld;
+      if (Collisions.AABBsIntersect(trigger_mins, trigger_maxs, player_mins, player_maxs)) {
+        if (!this.scene.triggersBeingTouched.has(trigger.name)) {
+          this.scene.triggersBeingTouched.add(trigger.name);
+          if (this.scene.triggerCallbacks[trigger.name]) {
+            this.scene.triggerCallbacks[trigger.name](this);
+          }
+        }
+      } else {
+        this.scene.triggersBeingTouched.delete(trigger.name);
+      }
+    });
 
     this.scene.camera.position = new BABYLON.Vector3(this.player.position.x, this.player.position.y + this.player.eyeHeight, this.player.position.z);
 
