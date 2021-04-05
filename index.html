@@ -20,6 +20,17 @@
         touch-action: none;
       }
 
+      #hud {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        touch-action: none;
+        pointer-events: none;
+      }
+      #hud * {
+        pointer-events: auto;
+      }
+
       #speedometer-container, #debug, #controls {
         position: absolute;
         right: 10px;
@@ -51,21 +62,22 @@
 
   <body>
 
-    <div id="speedometer-container"><h2>Speed</h2><div id="speedometer">0</div></div>
-    <div id="debug"></div>
-    <div id="controls">
-      <h2>Controls</h2>
-      <div>Move: WASD</div>
-      <div>Jump: Space</div>
-      <div>Conc: Q</div>
-      <a id="pause-button" href="#">Pause/Unpause</a>
+    <div id="hud">
+      <div id="speedometer-container"><h2>Speed</h2><div id="speedometer">0</div></div>
+      <div id="debug"></div>
+      <div id="controls">
+        <h2>Controls</h2>
+        <div>Move: WASD</div>
+        <div>Jump: Space</div>
+        <div>Conc: Q</div>
+        <a id="pause-button" href="#">Pause/Unpause</a>
+      </div>
     </div>
     <canvas id="renderCanvas" touch-action="none"></canvas>
-
     <script type="module">
       import Game from "./src/Game.js";
       window.addEventListener('DOMContentLoaded', function(){
-        var fpsmeter = new FPSMeter({theme: 'dark', heat: 0, graph: 1});
+        var fpsmeter = new FPSMeter(document.getElementById('hud'), {theme: 'dark', heat: 0, graph: 1});
         var canvas = document.getElementById("renderCanvas");
         var engine = new BABYLON.Engine(canvas, true);
         var game = new Game(canvas, engine, fpsmeter);
@@ -83,7 +95,7 @@
           }
           paused = !paused;
           e.preventDefault();
-        })
+        });
       });
     </script>
 
