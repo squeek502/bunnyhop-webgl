@@ -114,6 +114,12 @@ export default class Game {
   }
 
   update(dt) {
+    // HACK: this update can be called before the scene is fully ready,
+    // so just check for dt == 0 and return early in that case
+    // TODO: onBeforeRenderObservable is probably not the best way
+    // of implementing the game loop?
+    if (dt == 0) return;
+
     this.player.update(dt, this.inputMap);
 
     this.scene.camera.position = new BABYLON.Vector3(this.player.position.x, this.player.position.y + this.player.eyeHeight, this.player.position.z);
